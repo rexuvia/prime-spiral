@@ -317,19 +317,27 @@
       };
 
       let activePalette = palettes.default;
-      let backgroundGradient = null;
+      var backgroundGradient = null;
 
       function buildBackground() {
-        backgroundGradient = ctx.createRadialGradient(
-          width * 0.5,
-          height * 0.5,
-          Math.min(width, height) * 0.05,
-          width * 0.5,
-          height * 0.5,
-          Math.max(width, height) * 0.65
-        );
-        backgroundGradient.addColorStop(0, activePalette.backgroundStops[0]);
-        backgroundGradient.addColorStop(1, activePalette.backgroundStops[1]);
+        try {
+          backgroundGradient = ctx.createRadialGradient(
+            width * 0.5,
+            height * 0.5,
+            Math.min(width, height) * 0.05,
+            width * 0.5,
+            height * 0.5,
+            Math.max(width, height) * 0.65
+          );
+          backgroundGradient.addColorStop(0, activePalette.backgroundStops[0]);
+          backgroundGradient.addColorStop(1, activePalette.backgroundStops[1]);
+        } catch (e) {
+          console.error('Failed to create background gradient:', e);
+          // Create a fallback solid color gradient
+          backgroundGradient = ctx.createLinearGradient(0, 0, width, height);
+          backgroundGradient.addColorStop(0, '#05060b');
+          backgroundGradient.addColorStop(1, '#0a192f');
+        }
       }
       buildBackground();
 
@@ -753,6 +761,9 @@
       function render() {
         ctx.save();
         ctx.setTransform(1, 0, 0, 1, 0, 0);
+        if (!backgroundGradient) {
+          buildBackground();
+        }
         ctx.fillStyle = backgroundGradient;
         ctx.fillRect(0, 0, width, height);
         ctx.restore();
