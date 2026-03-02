@@ -23,9 +23,9 @@ Explore the hidden constellations of prime numbers through two legendary spirals
 ## 📂 Project Structure
 ```
 prime-spiral/
-├── index.html        # symlink to deployed game file
-├── README.md         # this file
-└── .gitignore        # symlinked shared ignore rules (created on init)
+├── index.html   # game source (self-contained HTML)
+├── README.md    # documentation
+└── .gitignore   # repo hygiene
 ```
 
 ## 🚀 Deployment
