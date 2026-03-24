@@ -1,0 +1,23 @@
+{
+  "name": "prime-spiral",
+  "version": "1.0.0",
+  "description": "Explore the hidden constellations of prime numbers through two legendary spirals:",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rexuvia/prime-spiral.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rexuvia/prime-spiral/issues"
+  },
+  "homepage": "https://github.com/rexuvia/prime-spiral#readme",
+  "dependencies": {
+    "live-server": "^1.2.2"
+  }
+}

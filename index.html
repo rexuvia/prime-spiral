@@ -3,1003 +3,152 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Prime Spiral Observatory</title>
+  <title>Prime Spiral (Wasm)</title>
   <style>
-    :root {
-      color-scheme: dark;
-      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
     body {
       margin: 0;
       overflow: hidden;
-      background: #05060b;
-      color: #e7f9ff;
+      background: #000;
+      color: #fff;
+      font-family: sans-serif;
     }
-
     canvas {
-      position: fixed;
-      inset: 0;
+      display: block;
       width: 100vw;
       height: 100vh;
-      display: block;
     }
-
     #hud {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      background: rgba(5, 10, 20, 0.65);
-      border: 1px solid rgba(0, 255, 200, 0.4);
-      backdrop-filter: blur(12px);
-      border-radius: 14px;
-      padding: 16px 18px;
-      max-width: min(420px, 80vw);
-      box-shadow: 0 20px 60px rgba(0, 15, 35, 0.6);
-      transition: opacity 0.3s ease;
-    }
-
-    #hud h1 {
-      font-family: 'Orbitron', 'Inter', sans-serif;
-      font-size: clamp(1.2rem, 2.5vw, 1.65rem);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      margin: 0 0 6px;
-    }
-
-    #hud p,
-    #hud span {
-      font-size: 0.85rem;
-      line-height: 1.5;
-      margin: 0;
-      color: rgba(215, 240, 255, 0.78);
-    }
-
-    #hud small {
-      font-size: 0.7rem;
-      color: rgba(165, 215, 255, 0.7);
-    }
-
-    #controls {
-      position: fixed;
-      bottom: 24px;
-      right: 20px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      justify-content: flex-end;
-      max-width: min(560px, 100vw - 40px);
-    }
-
-    .control-group {
-      display: flex;
-      background: rgba(5, 10, 22, 0.72);
-      border: 1px solid rgba(0, 200, 255, 0.35);
-      border-radius: 12px;
-      backdrop-filter: blur(12px);
-      padding: 10px;
-      gap: 10px;
-      flex-wrap: wrap;
-      box-shadow: 0 18px 40px rgba(0, 12, 30, 0.55);
-    }
-
-    button.control {
-      font-family: inherit;
-      font-size: 0.82rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      padding: 10px 16px;
-      border-radius: 999px;
-      border: 1px solid rgba(0, 240, 255, 0.45);
-      background: radial-gradient(circle at 30% 30%, rgba(0, 240, 255, 0.32), rgba(70, 0, 120, 0.38));
-      color: #f1fdff;
-      cursor: pointer;
-      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.3s;
-      backdrop-filter: blur(6px);
-    }
-
-    button.control[aria-pressed="true"] {
-      border-color: rgba(255, 255, 120, 0.7);
-      box-shadow: 0 12px 32px rgba(255, 230, 90, 0.35);
-      background: radial-gradient(circle at 20% 20%, rgba(255, 255, 180, 0.42), rgba(120, 0, 200, 0.55));
-      color: #fff9d0;
-    }
-
-    button.control:hover {
-      transform: translateY(-1px) scale(1.02);
-      box-shadow: 0 12px 30px rgba(0, 210, 255, 0.3);
-    }
-
-    button.control:active {
-      transform: scale(0.97);
-    }
-
-    #legend {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: rgba(3, 8, 18, 0.74);
-      border: 1px solid rgba(80, 160, 255, 0.35);
-      border-radius: 14px;
-      padding: 14px 18px;
-      max-width: min(320px, 70vw);
-      backdrop-filter: blur(14px);
-      box-shadow: 0 20px 50px rgba(0, 18, 50, 0.7);
-      font-size: 0.77rem;
-      line-height: 1.5;
-      color: rgba(210, 235, 255, 0.82);
-    }
-
-    #legend h2 {
-      margin: 0 0 8px;
-      font-size: 0.92rem;
-      font-weight: 600;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      font-family: 'Orbitron', 'Inter', sans-serif;
-    }
-
-    #legend ul {
-      margin: 0;
-      padding-left: 16px;
-      list-style: none;
-    }
-
-    #legend li::before {
-      content: '⟢';
-      color: rgba(0, 255, 200, 0.8);
-      margin-right: 8px;
-    }
-
-    #annotation-panel {
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: 20px;
-      max-width: min(460px, 90vw);
-      padding: 14px 18px;
-      border-radius: 14px;
-      border: 1px solid rgba(255, 210, 120, 0.4);
-      background: rgba(30, 24, 5, 0.78);
-      color: rgba(255, 245, 200, 0.9);
-      font-size: 0.8rem;
-      line-height: 1.6;
-      box-shadow: 0 16px 36px rgba(90, 50, 0, 0.55);
-      backdrop-filter: blur(12px);
-      display: none;
-      text-align: center;
-    }
-
-    #annotation-panel.active {
-      display: block;
-    }
-
-    @media (max-width: 780px) {
-      #hud {
-        top: 12px;
-        left: 12px;
-        padding: 12px;
-      }
-      #controls {
-        bottom: 16px;
-        right: 12px;
-      }
-      button.control {
-        font-size: 0.74rem;
-        padding: 8px 14px;
-      }
-      #legend {
-        top: unset;
-        bottom: 16px;
-        right: 12px;
-      }
-    }
-
-    .sr-only {
       position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.7);
+      padding: 10px;
+      border-radius: 5px;
+      pointer-events: none;
     }
   </style>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Orbitron:wght@500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <canvas id="primeCanvas" aria-hidden="true"></canvas>
-
-  <div id="hud" role="status" aria-live="polite">
-    <h1>Prime Spiral Observatory</h1>
-    <p>
-      Touch or drag to explore. Pinch or scroll to zoom. Toggle overlays to reveal hidden prime constellations.
-    </p>
-    <p id="stats">
-      Loading primes…
-    </p>
-    <small id="modeLabel"></small>
+  <div id="hud">
+    <h1>Prime Spiral</h1>
+    <p>Loading Wasm module...</p>
   </div>
-
-  <aside id="legend" aria-label="Overlay legend">
-    <h2>Legend</h2>
-    <ul>
-      <li><span style="color:#8efaff;">Cyan→Magenta dots</span>: prime magnitude gradient</li>
-      <li><span style="color:#ffe25f;">Amber threads</span>: twin prime bonds</li>
-      <li><span style="color:#5f8bff;">Violet veils</span>: density heatmap</li>
-    </ul>
-  </aside>
-
-  <div id="controls" role="group" aria-label="Controls">
-    <div class="control-group" aria-label="Mode controls">
-      <button class="control" id="modeToggle" type="button">Switch to Sacks Spiral</button>
-      <button class="control" id="resetView" type="button">Reset View</button>
-    </div>
-    <div class="control-group" aria-label="Overlay toggles">
-      <button class="control" id="toggleTwin" type="button" aria-pressed="false">Twin Prime Bonds</button>
-      <button class="control" id="toggleDensity" type="button" aria-pressed="false">Density Veil</button>
-      <button class="control" id="toggleAnnotations" type="button" aria-pressed="false">Insight Annotations</button>
-      <button class="control" id="togglePalette" type="button" aria-pressed="false">Colorblind Palette</button>
-    </div>
-  </div>
-
-  <div id="annotation-panel" aria-live="polite"></div>
-
-  <span class="sr-only" id="liveRegion" aria-live="assertive"></span>
+  <canvas id="canvas"></canvas>
 
   <script>
-    (function () {
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const hud = document.getElementById('hud');
+    
+    let wasmMemory;
+    let generate_spiral;
+    let is_prime;
+    
+    let scale = 5.0;
+    const TOTAL_POINTS = 50000;
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      draw();
+    }
+
+    async function initWasm() {
       try {
-        if (!window.Worker) {
-          throw new Error('Web Workers not supported in this browser');
-        }
-      const canvas = document.getElementById('primeCanvas');
-      const ctx = canvas.getContext('2d', { alpha: true });
-      const statsEl = document.getElementById('stats');
-      const modeLabel = document.getElementById('modeLabel');
-      const annotationPanel = document.getElementById('annotation-panel');
-      const liveRegion = document.getElementById('liveRegion');
+        const memory = new WebAssembly.Memory({ initial: 256, maximum: 256 }); // 16MB
+        wasmMemory = memory;
 
-      let dpr = window.devicePixelRatio || 1;
-      let width = window.innerWidth;
-      let height = window.innerHeight;
-
-      function resizeCanvas() {
-        width = window.innerWidth;
-        height = window.innerHeight;
-        dpr = Math.min(3, window.devicePixelRatio || 1);
-        canvas.width = width * dpr;
-        canvas.height = height * dpr;
-        canvas.style.width = width + 'px';
-        canvas.style.height = height + 'px';
-        ctx.resetTransform();
-        ctx.scale(dpr, dpr);
-        buildBackground();
-      }
-
-      window.addEventListener('resize', resizeCanvas);
-      resizeCanvas();
-
-      const now = new Date();
-      const doy = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
-      const baseHue = (doy * 7) % 360;
-      const palettes = {
-        default: {
-          backgroundStops: [
-            `hsl(${(baseHue + 300) % 360} 68% 6%)`,
-            `hsl(${(baseHue + 40) % 360} 60% 12%)`
-          ],
-          primeStart: `hsl(${(baseHue + 180) % 360} 90% 72%)`,
-          primeEnd: `hsl(${(baseHue + 320) % 360} 80% 52%)`,
-          twin: 'rgba(255, 226, 95, 0.65)',
-          density: 'rgba(95, 139, 255, 0.08)',
-          densityStrong: 'rgba(95, 139, 255, 0.32)'
-        },
-        colorblind: {
-          backgroundStops: [
-            `hsl(${(baseHue + 310) % 360} 35% 8%)`,
-            `hsl(${(baseHue + 50) % 360} 25% 16%)`
-          ],
-          primeStart: '#72f5dd',
-          primeEnd: '#ffbb6d',
-          twin: 'rgba(255, 247, 120, 0.7)',
-          density: 'rgba(186, 204, 255, 0.1)',
-          densityStrong: 'rgba(186, 204, 255, 0.3)'
-        }
-      };
-
-      let activePalette = palettes.default;
-      var backgroundGradient = null;
-
-      function buildBackground() {
-        try {
-          backgroundGradient = ctx.createRadialGradient(
-            width * 0.5,
-            height * 0.5,
-            Math.min(width, height) * 0.05,
-            width * 0.5,
-            height * 0.5,
-            Math.max(width, height) * 0.65
-          );
-          backgroundGradient.addColorStop(0, activePalette.backgroundStops[0]);
-          backgroundGradient.addColorStop(1, activePalette.backgroundStops[1]);
-        } catch (e) {
-          console.error('Failed to create background gradient:', e);
-          // Create a fallback solid color gradient
-          backgroundGradient = ctx.createLinearGradient(0, 0, width, height);
-          backgroundGradient.addColorStop(0, '#05060b');
-          backgroundGradient.addColorStop(1, '#0a192f');
-        }
-      }
-      buildBackground();
-
-      const modeStates = {
-        ulam: {
-          label: 'Ulam Spiral · Cartesian lattice where primes align along mysterious diagonals',
-          unitScale: 12,
-          densityBin: 10
-        },
-        sacks: {
-          label: 'Sacks Spiral · Polar bloom highlighting primes along luminous arms',
-          unitScale: 10,
-          densityBin: 22
-        }
-      };
-
-      let mode = 'ulam';
-      let scale = 1.0;
-      let targetScale = 1.0;
-      let offsetX = 0;
-      let offsetY = 0;
-      let inertialVelocity = { x: 0, y: 0 };
-      let isPanning = false;
-      let twinEnabled = false;
-      let densityEnabled = false;
-      let annotationsEnabled = false;
-      let colorblindEnabled = false;
-
-      const primes = [];
-      const ulamPositions = [];
-      const sacksPositions = [];
-      const twinPairs = [];
-      const densityMaps = {
-        ulam: new Map(),
-        sacks: new Map()
-      };
-      const densityStats = {
-        ulam: { max: 0 },
-        sacks: { max: 0 }
-      };
-
-      const conclusions = [
-        'Diagonal bands in the Ulam view trace arithmetic progressions whose common difference is four — a favorite hunting ground for twin primes.',
-        'Switch to the Sacks Spiral to see prime deserts: the faint voids betray quadratic residues where primes seldom tread.',
-        'The density veil is normalized per view. A saturated cell in the Sacks spiral may hold thousands of primes projected into a slender annulus.'
-      ];
-
-      const annotationSnippets = {
-        ulam: [
-          {
-            title: 'Diagonal Lore',
-            text: 'Long streaks emerge because quadratic polynomials of form 4n² + bn + c stay prime longer than random chance hints.',
-            anchor: () => ({ x: 120, y: -120 })
-          },
-          {
-            title: 'Prime Void',
-            text: 'Gaps near perfect squares reveal composite zones — squares sit at the corners; primes avoid their immediate neighbors.',
-            anchor: () => ({ x: -90, y: 180 })
+        const imports = {
+          env: {
+            memory: memory,
+            cos: Math.cos,
+            sin: Math.sin,
+            sqrt: Math.sqrt
           }
-        ],
-        sacks: [
-          {
-            title: 'Fibonacci Arms',
-            text: 'With the golden-angle variant the arms mirror phyllotaxis — primes trace botanical spirals like sunflower seeds.',
-            anchor: () => ({ x: 160, y: 160 })
-          },
-          {
-            title: 'Twin Bridges',
-            text: 'Twin primes ride adjacent lanes; toggle bonds to witness their synchronized curvature.',
-            anchor: () => ({ x: -150, y: 100 })
-          }
-        ]
-      };
+        };
 
-      function formatNumber(num) {
-        return num.toLocaleString('en-US');
+        const response = await fetch('core.wasm');
+        const buffer = await response.arrayBuffer();
+        const module = await WebAssembly.instantiate(buffer, imports);
+
+        generate_spiral = module.instance.exports.generate_spiral;
+        is_prime = module.instance.exports.is_prime;
+
+        window.addEventListener('resize', resize);
+        resize(); // initial draw
+      } catch (err) {
+        hud.innerHTML += `<p style="color:red">Error loading wasm: ${err.message}</p>`;
+        console.error(err);
       }
+    }
 
-      let animationFrame = null;
-      let lastFrame = performance.now();
-      let fps = 0;
-      let maxPrimeSeen = 2;
-
-      function updateHUD() {
-        const primeCount = primes.length;
-        const label = modeStates[mode].label;
-        modeLabel.textContent = label;
-        statsEl.innerHTML = `
-          <strong>${formatNumber(primeCount)}</strong> primes plotted · 
-          max N = <strong>${formatNumber(maxPrimeSeen)}</strong><br/>
-          Scale ×${scale.toFixed(2)} · FPS ${fps.toFixed(0)}
+    function draw() {
+        if (!generate_spiral) return;
+        
+        const w = canvas.width;
+        const h = canvas.height;
+        const cx = w / 2;
+        const cy = h / 2;
+        
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = '#0ff';
+        
+        const t0 = performance.now();
+        
+        // Mode 1 (Archimedean/Sacks)
+        let mode = 1;
+        
+        // Call wasm
+        const drawnCount = generate_spiral(
+            TOTAL_POINTS,
+            mode,
+            scale,
+            cx, cy,
+            w, h
+        );
+        
+        const t1 = performance.now();
+        
+        // Render from memory
+        // Each point is 8 bytes (2 x f32)
+        const pointData = new Float32Array(wasmMemory.buffer, 0, drawnCount * 2);
+        
+        ctx.beginPath();
+        for (let i = 0; i < drawnCount; i++) {
+            const x = pointData[i * 2];
+            const y = pointData[i * 2 + 1];
+            ctx.rect(x, y, 1.5, 1.5); // small square per prime
+        }
+        ctx.fill();
+        
+        const renderTime = performance.now() - t1;
+        const totalTime = performance.now() - t0;
+        
+        hud.innerHTML = `
+            <h1>Prime Spiral</h1>
+            <p>Sacks Spiral (Archimedean)</p>
+            <p>Checking up to: ${TOTAL_POINTS.toLocaleString()}</p>
+            <p>Primes drawn: ${drawnCount.toLocaleString()}</p>
+            <p style="font-size:0.8em; color:#aaa">Compute: ${(t1-t0).toFixed(1)}ms | Render: ${renderTime.toFixed(1)}ms</p>
+            <p style="font-size:0.8em; color:#888">Scroll to zoom</p>
         `;
-      }
+    }
 
-      const workerScript = `
-        const primes = [2];
-        let last = 2;
-        const batches = 512;
-
-        function isPrime(n) {
-          const limit = Math.sqrt(n);
-          for (let i = 0; i < primes.length; i++) {
-            const p = primes[i];
-            if (p > limit) break;
-            if (n % p === 0) return false;
-          }
-          return true;
-        }
-
-        function ulamCoords(n) {
-          if (n === 1) {
-            return { x: 0, y: 0 };
-          }
-          const k = Math.ceil((Math.sqrt(n) - 1) / 2);
-          const t = 2 * k + 1;
-          const m = t * t;
-          const d = t - 1;
-
-          if (n >= m - d) {
-            return { x: k - (m - n), y: -k };
-          }
-          if (n >= m - 2 * d) {
-            return { x: -k, y: -k + (m - d - n) };
-          }
-          if (n >= m - 3 * d) {
-            return { x: -k + (m - 2 * d - n), y: k };
-          }
-          return { x: k, y: k - (m - 3 * d - n) };
-        }
-
-        function sacksCoords(n) {
-          const r = Math.sqrt(n);
-          const theta = Math.sqrt(n) * 2.39996322972865332; // golden angle (in radians)
-          return {
-            x: r * Math.cos(theta),
-            y: r * Math.sin(theta)
-          };
-        }
-
-        function emitBatch(list) {
-          self.postMessage({ type: 'batch', payload: list }, [list.buffer]);
-        }
-
-        function packBatch(items) {
-          const len = items.length;
-          const buffer = new Float64Array(len * 5);
-          for (let i = 0; i < len; i++) {
-            const item = items[i];
-            const base = i * 5;
-            buffer[base] = item.n;
-            buffer[base + 1] = item.ulam.x;
-            buffer[base + 2] = item.ulam.y;
-            buffer[base + 3] = item.sacks.x;
-            buffer[base + 4] = item.sacks.y;
-          }
-          return buffer;
-        }
-
-        self.onmessage = (event) => {
-          const { type, targetCount } = event.data;
-          if (type === 'request') {
-            const list = [];
-            while (primes.length < targetCount) {
-              last += last === 2 ? 1 : 2; // skip even numbers after 2
-              if (isPrime(last)) {
-                primes.push(last);
-                list.push({
-                  n: last,
-                  ulam: ulamCoords(last),
-                  sacks: sacksCoords(last)
-                });
-                if (list.length >= batches) {
-                  const packed = packBatch(list);
-                  emitBatch(packed);
-                  list.length = 0;
-                }
-              }
-            }
-            if (list.length) {
-              const packed = packBatch(list);
-              emitBatch(packed);
-            }
-            self.postMessage({ type: 'status', count: primes.length, max: last });
-          }
-        };
-      `;
-
-      const workerUrl = URL.createObjectURL(new Blob([workerScript], { type: 'application/javascript' }));
-      const worker = new Worker(workerUrl);
-      URL.revokeObjectURL(workerUrl);
-
-      let targetPrimeCount = width > 900 ? 180000 : 90000;
-      let pendingRequest = false;
-
-      const incomingQueue = [];
-
-      worker.addEventListener('message', (event) => {
-        const { type, payload, count, max } = event.data;
-        if (type === 'batch') {
-          incomingQueue.push(payload);
-        } else if (type === 'status') {
-          pendingRequest = false;
-          maxPrimeSeen = max;
-          if (count < targetPrimeCount) {
-            requestMore(targetPrimeCount);
-          }
-        }
-      });
-
-      function requestMore(target) {
-        if (pendingRequest) return;
-        pendingRequest = true;
-        worker.postMessage({ type: 'request', targetCount: target });
-      }
-
-      requestMore(targetPrimeCount);
-
-      function processQueue() {
-        if (!incomingQueue.length) {
-          return;
-        }
-        const payload = incomingQueue.shift();
-        const view = new Float64Array(payload);
-        const len = view.length / 5;
-        for (let i = 0; i < len; i++) {
-          const base = i * 5;
-          const n = view[base];
-          const ux = view[base + 1];
-          const uy = view[base + 2];
-          const sx = view[base + 3];
-          const sy = view[base + 4];
-          const index = primes.length;
-          primes.push(n);
-          ulamPositions.push({ x: ux, y: uy, index });
-          sacksPositions.push({ x: sx, y: sy, index });
-          if (index > 0 && n - primes[index - 1] === 2) {
-            twinPairs.push({ a: index - 1, b: index });
-          }
-          addToDensity('ulam', ux, uy);
-          addToDensity('sacks', sx, sy);
-        }
-      }
-
-      function addToDensity(modeKey, x, y) {
-        const state = modeStates[modeKey];
-        if (!state) return;
-        const binSize = state.densityBin;
-        const map = densityMaps[modeKey];
-        const col = Math.round(x / binSize);
-        const row = Math.round(y / binSize);
-        const key = col + ',' + row;
-        const next = (map.get(key) || 0) + 1;
-        map.set(key, next);
-        if (next > densityStats[modeKey].max) {
-          densityStats[modeKey].max = next;
-        }
-      }
-
-      const pointers = new Map();
-      let lastPan = { x: 0, y: 0 };
-
-      function pointerDown(event) {
-        canvas.setPointerCapture(event.pointerId);
-        pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-        if (pointers.size === 1) {
-          isPanning = true;
-          inertialVelocity.x = 0;
-          inertialVelocity.y = 0;
-        }
-      }
-
-      function pointerMove(event) {
-        if (!pointers.has(event.pointerId)) return;
-        const prev = pointers.get(event.pointerId);
-        const current = { x: event.clientX, y: event.clientY };
-        pointers.set(event.pointerId, current);
-
-        if (pointers.size === 1 && isPanning) {
-          const dx = current.x - prev.x;
-          const dy = current.y - prev.y;
-          offsetX += dx / scale;
-          offsetY += dy / scale;
-          inertialVelocity.x = dx / scale;
-          inertialVelocity.y = dy / scale;
-        } else if (pointers.size === 2) {
-          const arr = Array.from(pointers.values());
-          const [p1, p2] = arr;
-          const prevArr = Array.from(pointers.entries()).map(([id, val]) => {
-            return id === event.pointerId ? prev : val;
-          });
-          const [prev1, prev2] = prevArr;
-          const prevDist = Math.hypot(prev1.x - prev2.x, prev1.y - prev2.y);
-          const newDist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-          if (prevDist > 0) {
-            const zoomFactor = newDist / prevDist;
-            performZoom(zoomFactor, {
-              x: (p1.x + p2.x) / 2,
-              y: (p1.y + p2.y) / 2
-            });
-          }
-        }
-      }
-
-      function pointerUp(event) {
-        canvas.releasePointerCapture(event.pointerId);
-        pointers.delete(event.pointerId);
-        if (pointers.size === 0) {
-          isPanning = false;
-        }
-      }
-
-      canvas.addEventListener('pointerdown', pointerDown);
-      canvas.addEventListener('pointermove', pointerMove, { passive: false });
-      canvas.addEventListener('pointerup', pointerUp);
-      canvas.addEventListener('pointercancel', pointerUp);
-      canvas.addEventListener('pointerleave', pointerUp);
-
-      canvas.addEventListener('wheel', (event) => {
-        event.preventDefault();
-        const zoomFactor = Math.exp(-event.deltaY * 0.0015);
-        performZoom(zoomFactor, { x: event.clientX, y: event.clientY });
-      }, { passive: false });
-
-      function performZoom(factor, anchor) {
-        const previousScale = targetScale;
-        targetScale = Math.min(35, Math.max(0.15, targetScale * factor));
-        const scaleRatio = targetScale / previousScale;
-        const worldAnchorX = (anchor.x - width / 2) / scale + offsetX;
-        const worldAnchorY = (anchor.y - height / 2) / scale + offsetY;
-        offsetX = worldAnchorX - (anchor.x - width / 2) / targetScale;
-        offsetY = worldAnchorY - (anchor.y - height / 2) / targetScale;
-      }
-
-      function animate(nowTime) {
-        animationFrame = requestAnimationFrame(animate);
-        const delta = nowTime - lastFrame;
-        fps = fps * 0.9 + (1000 / Math.max(delta, 16)) * 0.1;
-        lastFrame = nowTime;
-
-        processQueue();
-        applyInertia(delta);
-        scale += (targetScale - scale) * 0.15;
-
-        render();
-        if (primes.length < targetPrimeCount * 0.75) {
-          targetPrimeCount = Math.min(targetPrimeCount * 1.15, 350000);
-          requestMore(targetPrimeCount);
-        }
-        updateHUD();
-      }
-
-      function applyInertia(delta) {
-        if (isPanning) return;
-        const damping = Math.pow(0.92, delta / 16);
-        inertialVelocity.x *= damping;
-        inertialVelocity.y *= damping;
-        if (Math.abs(inertialVelocity.x) < 0.01 && Math.abs(inertialVelocity.y) < 0.01) {
-          inertialVelocity.x = 0;
-          inertialVelocity.y = 0;
-          return;
-        }
-        offsetX += inertialVelocity.x;
-        offsetY += inertialVelocity.y;
-      }
-
-      function getActivePositions() {
-        return mode === 'ulam' ? ulamPositions : sacksPositions;
-      }
-
-      function getPrimeColor(n) {
-        const ratio = Math.min(1, Math.log(n) / Math.log(Math.max(maxPrimeSeen, 3)));
-        const interpolate = (start, end, t) => start + (end - start) * t;
-
-        const startColor = hexToRgb(activePalette.primeStart);
-        const endColor = hexToRgb(activePalette.primeEnd);
-        const r = Math.round(interpolate(startColor.r, endColor.r, ratio));
-        const g = Math.round(interpolate(startColor.g, endColor.g, ratio));
-        const b = Math.round(interpolate(startColor.b, endColor.b, ratio));
-        return `rgba(${r}, ${g}, ${b}, ${ratio < 0.2 ? 0.7 : 0.95})`;
-      }
-
-      function hexToRgb(hex) {
-        if (hex.startsWith('hsl')) {
-          const match = /hsl\(([^)]+)\)/.exec(hex);
-          if (match) {
-            const [h, s, l] = match[1].split(/[,\s]+/).map((segment, idx) => idx === 0 ? parseFloat(segment) : parseFloat(segment) / 100);
-            const rgb = hslToRgb(h / 360, s, l);
-            return { r: Math.round(rgb[0] * 255), g: Math.round(rgb[1] * 255), b: Math.round(rgb[2] * 255) };
-          }
-        }
-        const clean = hex.replace('#', '');
-        const bigint = parseInt(clean, 16);
-        return {
-          r: (bigint >> 16) & 255,
-          g: (bigint >> 8) & 255,
-          b: bigint & 255
-        };
-      }
-
-      function hslToRgb(h, s, l) {
-        if (s === 0) {
-          return [l, l, l];
-        }
-        const hue2rgb = (p, q, t) => {
-          if (t < 0) t += 1;
-          if (t > 1) t -= 1;
-          if (t < 1 / 6) return p + (q - p) * 6 * t;
-          if (t < 1 / 2) return q;
-          if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-          return p;
-        };
-        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-        const p = 2 * l - q;
-        return [
-          hue2rgb(p, q, h + 1 / 3),
-          hue2rgb(p, q, h),
-          hue2rgb(p, q, h - 1 / 3)
-        ];
-      }
-
-      function render() {
-        ctx.save();
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        if (!backgroundGradient) {
-          buildBackground();
-        }
-        ctx.fillStyle = backgroundGradient;
-        ctx.fillRect(0, 0, width, height);
-        ctx.restore();
-
-        const positions = getActivePositions();
-        const unitScale = modeStates[mode].unitScale;
-        const radius = Math.max(0.6, Math.min(6, 2.2 / Math.pow(scale, 0.25)));
-        const detailStep = Math.max(1, Math.floor((2 / Math.pow(scale, 0.6))));
-
-        ctx.save();
-        ctx.translate(width / 2, height / 2);
-        ctx.scale(scale, scale);
-        ctx.translate(offsetX, offsetY);
-
-        if (densityEnabled) {
-          drawDensityLayer(unitScale);
-        }
-
-        const len = positions.length;
-        for (let i = 0; i < len; i += detailStep) {
-          const pos = positions[i];
-          if (!pos) continue;
-          const x = pos.x * unitScale;
-          const y = pos.y * unitScale;
-          if (!isInView(x, y, radius * 8)) continue;
-          const n = primes[pos.index];
-          ctx.beginPath();
-          ctx.fillStyle = getPrimeColor(n);
-          ctx.shadowBlur = Math.max(8 / scale, 2);
-          ctx.shadowColor = ctx.fillStyle;
-          ctx.arc(x, y, radius, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        ctx.shadowBlur = 0;
-
-        if (twinEnabled) {
-          drawTwinBonds(unitScale);
-        }
-
-        if (annotationsEnabled) {
-          drawAnnotations(unitScale);
-        }
-
-        ctx.restore();
-      }
-
-      function drawTwinBonds(unitScale) {
-        const positions = getActivePositions();
-        ctx.save();
-        ctx.lineWidth = Math.max(0.6 / scale, 0.15);
-        ctx.strokeStyle = activePalette.twin;
-        ctx.globalCompositeOperation = 'lighter';
-        for (let i = 0; i < twinPairs.length; i++) {
-          const { a, b } = twinPairs[i];
-          const pa = positions[a];
-          const pb = positions[b];
-          if (!pa || !pb) continue;
-          const ax = pa.x * unitScale;
-          const ay = pa.y * unitScale;
-          const bx = pb.x * unitScale;
-          const by = pb.y * unitScale;
-          if (!isInView(ax, ay, 120) && !isInView(bx, by, 120)) continue;
-          ctx.beginPath();
-          ctx.moveTo(ax, ay);
-          ctx.lineTo(bx, by);
-          ctx.stroke();
-        }
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.restore();
-      }
-
-      function drawDensityLayer(unitScale) {
-        ctx.save();
-        ctx.fillStyle = activePalette.density;
-        ctx.globalCompositeOperation = 'screen';
-        const map = densityMaps[mode];
-        const stats = densityStats[mode];
-        const binSize = modeStates[mode].densityBin * unitScale;
-        const halfBin = binSize / 2;
-        map.forEach((count, key) => {
-          const [col, row] = key.split(',').map(Number);
-          const x = col * binSize;
-          const y = row * binSize;
-          const strength = Math.min(1, count / stats.max);
-          ctx.fillStyle = strength > 0.6 ? activePalette.densityStrong : activePalette.density;
-          ctx.globalAlpha = 0.08 + 0.28 * strength;
-          if (isInView(x, y, binSize * 1.5)) {
-            ctx.beginPath();
-            ctx.rect(x - halfBin, y - halfBin, binSize, binSize);
-            ctx.fill();
-          }
-        });
-        ctx.globalAlpha = 1;
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.restore();
-      }
-
-      function drawAnnotations(unitScale) {
-        const positions = annotationSnippets[mode];
-        if (!positions) return;
-        ctx.save();
-        ctx.globalAlpha = 0.9;
-        positions.forEach((snippet) => {
-          const { x, y } = snippet.anchor();
-          const worldX = x * unitScale;
-          const worldY = y * unitScale;
-          if (!isInView(worldX, worldY, 150)) return;
-          const textPad = 6;
-          const fontSize = Math.max(12 / Math.sqrt(scale), 9);
-          ctx.font = `${fontSize}px Inter`;
-          ctx.fillStyle = 'rgba(255, 240, 210, 0.88)';
-          ctx.strokeStyle = 'rgba(120, 60, 0, 0.55)';
-          ctx.lineWidth = Math.max(1 / scale, 0.5);
-          ctx.beginPath();
-          ctx.roundRect(worldX - 60, worldY - 40, 120, 50, 8 / scale);
-          ctx.fill();
-          ctx.stroke();
-          ctx.fillStyle = 'rgba(60, 18, 0, 0.9)';
-          ctx.fillText(snippet.title, worldX - 52, worldY - 18, 110);
-          ctx.fillStyle = 'rgba(60, 18, 0, 0.7)';
-          wrapText(ctx, snippet.text, worldX - 52, worldY - 4, 100, fontSize + 2);
-        });
-        ctx.globalAlpha = 1;
-        ctx.restore();
-      }
-
-      function wrapText(context, text, x, y, maxWidth, lineHeight) {
-        const words = text.split(' ');
-        let line = '';
-        for (let i = 0; i < words.length; i++) {
-          const testLine = line + words[i] + ' ';
-          const width = context.measureText(testLine).width;
-          if (width > maxWidth && i > 0) {
-            context.fillText(line, x, y);
-            line = words[i] + ' ';
-            y += lineHeight;
-          } else {
-            line = testLine;
-          }
-        }
-        context.fillText(line, x, y);
-      }
-
-      function isInView(x, y, padding = 0) {
-        const halfW = width / (2 * scale);
-        const halfH = height / (2 * scale);
-        const left = -halfW - offsetX - padding;
-        const right = halfW - offsetX + padding;
-        const top = -halfH - offsetY - padding;
-        const bottom = halfH - offsetY + padding;
-        return x >= left && x <= right && y >= top && y <= bottom;
-      }
-
-      animate(performance.now());
-
-      const modeToggle = document.getElementById('modeToggle');
-      const resetView = document.getElementById('resetView');
-      const toggleTwin = document.getElementById('toggleTwin');
-      const toggleDensity = document.getElementById('toggleDensity');
-      const toggleAnnotations = document.getElementById('toggleAnnotations');
-      const togglePalette = document.getElementById('togglePalette');
-
-      modeToggle.addEventListener('click', () => {
-        mode = mode === 'ulam' ? 'sacks' : 'ulam';
-        offsetX = 0;
-        offsetY = 0;
-        scale = 1.0;
-        targetScale = 1.0;
-        modeToggle.textContent = mode === 'ulam' ? 'Switch to Sacks Spiral' : 'Switch to Ulam Spiral';
-        liveRegion.textContent = mode === 'ulam' ? 'Ulam spiral view activated' : 'Sacks spiral view activated';
-        updateAnnotationsPanel();
-      });
-
-      resetView.addEventListener('click', () => {
-        offsetX = 0;
-        offsetY = 0;
-        scale = 1.0;
-        targetScale = 1.0;
-        inertialVelocity = { x: 0, y: 0 };
-      });
-
-      toggleTwin.addEventListener('click', (event) => {
-        twinEnabled = !twinEnabled;
-        event.currentTarget.setAttribute('aria-pressed', String(twinEnabled));
-        liveRegion.textContent = twinEnabled ? 'Twin prime bonds enabled' : 'Twin prime bonds disabled';
-      });
-
-      toggleDensity.addEventListener('click', (event) => {
-        densityEnabled = !densityEnabled;
-        event.currentTarget.setAttribute('aria-pressed', String(densityEnabled));
-        liveRegion.textContent = densityEnabled ? 'Density veil enabled' : 'Density veil disabled';
-      });
-
-      toggleAnnotations.addEventListener('click', (event) => {
-        annotationsEnabled = !annotationsEnabled;
-        event.currentTarget.setAttribute('aria-pressed', String(annotationsEnabled));
-        updateAnnotationsPanel();
-      });
-
-      togglePalette.addEventListener('click', (event) => {
-        colorblindEnabled = !colorblindEnabled;
-        activePalette = colorblindEnabled ? palettes.colorblind : palettes.default;
-        buildBackground();
-        event.currentTarget.setAttribute('aria-pressed', String(colorblindEnabled));
-        liveRegion.textContent = colorblindEnabled ? 'Colorblind palette enabled' : 'Standard palette enabled';
-      });
-
-      function updateAnnotationsPanel() {
-        if (!annotationsEnabled) {
-          annotationPanel.classList.remove('active');
-          annotationPanel.textContent = '';
-          return;
-        }
-        annotationPanel.classList.add('active');
-        const snippetList = annotationSnippets[mode] || [];
-        const conclusion = conclusions[Math.floor(Math.random() * conclusions.length)];
-        annotationPanel.innerHTML = `
-          <strong>${mode === 'ulam' ? 'Ulam Insights' : 'Sacks Insights'}:</strong>
-          ${snippetList.map(snippet => snippet.title).join(' · ')}<br />
-          <em>${conclusion}</em>
-        `;
-      }
-
-      document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-          cancelAnimationFrame(animationFrame);
+    // Zooming
+    canvas.addEventListener('wheel', (e) => {
+        const zoomSpeed = 0.1;
+        if (e.deltaY > 0) {
+            scale *= (1 - zoomSpeed);
         } else {
-          lastFrame = performance.now();
-          animate(lastFrame);
+            scale *= (1 + zoomSpeed);
         }
-      });
-      } catch (error) {
-        console.error('Prime Spiral initialization error:', error);
-        document.getElementById('stats').textContent = 'Error loading observatory: ' + error.message;
-      }
-    })();
+        // clamp scale
+        scale = Math.max(0.1, Math.min(scale, 100.0));
+        draw();
+    });
+
+    initWasm();
   </script>
 </body>
 </html>
